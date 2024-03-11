@@ -274,7 +274,7 @@ if __name__ == "__main__":
 	print(f"\n{69* ' '}{13* '-'}\n{67* ' '} ! 3ème PARTIE ! \n{69* ' '}{13* '-'}\n")
 	affichage_duel(liste_equipe_t3)
 	winsound.Beep(frequency, duration)
-	
+	#
 	# 4ème partie
 	if nb_parties == 4 :
 		
