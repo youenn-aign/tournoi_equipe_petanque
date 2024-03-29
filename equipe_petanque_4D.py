@@ -19,9 +19,7 @@ with open("participant_petanque.csv", "r") as csv_file :
 		
 	csv_file.close()
 	#-------------------------------------------------------------
-
-#print(liste_participant)
-#print(len(liste_participant)-1)
+	
 
 def nb_equipe(nb_participant : int) -> Tuple :
 	"""
@@ -40,8 +38,6 @@ def nb_equipe(nb_participant : int) -> Tuple :
 	nb_trio = nb_participant % 4
 	nb_duo = nb_participant // 4 * 2 - nb_trio
 	return nb_duo , nb_trio
-
-
 
 def creation_equipe(nb_duo : int, nb_trio : int) :
 	"""
@@ -69,11 +65,10 @@ def creation_equipe(nb_duo : int, nb_trio : int) :
 		
 	return equipe
 
-
-
-def comparaison_equipe_opti(lst_joueur_adversaire1 : List, lst_joueur_adversaire2 : List) :
+def comparaison_equipe_opti(partie_1 : List, partie_2 : List, liste_j_equipe_3) :
 	""".
 	compare 2 listes et regarde si elles ont des tuples en commun
+	retourn False si les listes sont bonnes
 	>>> comparaison_equipe_opti([(2,7)],[(7,2)])
 	True
 	>>> comparaison_equipe_opti([(1,2,7)],[(2,7)])
@@ -83,36 +78,40 @@ def comparaison_equipe_opti(lst_joueur_adversaire1 : List, lst_joueur_adversaire
 	>>> comparaison_equipe_opti([(1,2,7)],[(2,9)])
 	False
 	"""
-	for i in lst_joueur_adversaire1 :
-		for j in lst_joueur_adversaire2 :
+	# vérifie pas 2 fois dans une équipe de 3
+	for equipe1 in partie_1 :				
+		if len(equipe1) == 3 :
+			for j3 in liste_j_equipe_3 :
+				for joueur1 in equipe1 :
+					if j3 == joueur1 :
+						return True
+						
+	for equipe2 in partie_2 :					
+		if len(equipe2) == 3 :
+			for j3 in liste_j_equipe_3 :
+				for joueur2 in equipe2 :
+					if j3 == joueur2 :
+						return True
+	#--------------------------------------
+			
+	# vérifie pas dans le même duel
+	lst_duel_1 = creation_liste_duel(partie_1)
+	lst_duel_2 = creation_liste_duel(partie_2)
+			
+	for duel1 in lst_duel_1 :
+		for duel2 in lst_duel_2 :
 			compteur = 0
-			# pas 2 fois dans une équipe de 3
-			if len(i) == 5 and  len(j) >= 5 :
-				for r in i[-3:] :
-					for t in j[-3:] :
-						if r == t :
-							return True
-			elif len(i) == 6 and  len(j) >= 5 :
-				for y in i[-3:] :
-					for w in j[-3:] :
-						if y == w : return True
-					for v in j[:3] :
-						if y == v : return True
-				for y in i[:3] :
-					for w in j[-3:] :
-						if y == w : return True
-					for v in j[:3] :
-						if y == v : return True
-			# pas dans le même duel
-			for k in i :
-				for q in j :
+			
+			for k in duel1 :
+				for q in duel2 :
 					if q == k :
 						compteur += 1
 						if compteur == 2 :
 							return True
+	#------------------------------
 	return False
 
-def comparaison_equipe_degrade(lst_equipe1 : List, lst_equipe2 : List, lst_joueur_adversaire1 : List, lst_joueur_adversaire2 : List) :
+def comparaison_equipe_degrade(partie_1 : List, partie_2 : List, liste_j_equipe_3 : List) :
 	""".
 	compare 2 listes et regarde si elles ont des tuples en commun
 	>>> comparaison_equipe([(2,7)],[(7,2)])
@@ -124,34 +123,61 @@ def comparaison_equipe_degrade(lst_equipe1 : List, lst_equipe2 : List, lst_joueu
 	>>> comparaison_equipe([(1,2,7)],[(2,9)])
 	False
 	"""
-	# pas dans la même équipe
-	for i in lst_equipe1 :
-		for j in lst_equipe2 :
-			if i == j or i[::-1] == j:
+	# vérifie pas 2 fois dans la même équipe
+	for equipe1 in partie_1 :
+		for equipe2 in partie_2 :
+			if equipe1 == equipe2 or equipe1[::-1] == equipe2:
 				return True
-			elif len(i) > 2 or len(j) > 2 :
-				compteur = 0
-				for k in i :
-					for q in j :
-						if q == k :
-							compteur += 1
-							if compteur == 2 :
+			elif len(equipe1) > 2 or len(equipe2) > 2 :
+				cmt = 0
+				for joueur1 in equipe1 :
+					for joueur2 in equipe2 :
+						if joueur1 == joueur2 :
+							cmt += 1
+							if cmt == 2 :
 								return True
-	# pas contre le même adversaire et pas 2 fois dans une équipe de 3		
-	for y in lst_joueur_adversaire1 :
-		for v in lst_joueur_adversaire2 :
-			if y[0] == v[0] :
-				for w in y[1] :
-					for x in v[1] :
-						if w == x :
+	#-----------------------------------
+
+	# vérifie pas 2 fois contre le même adversaire
+	lst_joueur_adversaire1 = creation_liste_joueur_adversaire(partie_1)
+	lst_joueur_adversaire2 = creation_liste_joueur_adversaire(partie_2)
+	for j_a1 in lst_joueur_adversaire1 :
+		for j_a2 in lst_joueur_adversaire2 :
+			if j_a1[0] == j_a2[0] :
+				for adversaire1 in j_a1[1] :
+					for adversaire2 in j_a2[1] :
+						if adversaire1 == adversaire2 :
 							return True
-			if len(y[1]) == 3 and len(v[1]) == 3 :
-				for r in y[1] :
-					for t in v[1] :
-						 if r == t : return True
+	# --------------------------------------------
+	
+	# vérifie pas 2 fois dans une équipe de 3
+	for equipe1 in partie_1 :				
+		if len(equipe1) == 3 :
+			for j3 in liste_j_equipe_3 :
+				for joueur1 in equipe1 :
+					if j3 == joueur1 :
+						return True
+						
+	for equipe2 in partie_2 :					
+		if len(equipe2) == 3 :
+			for j3 in liste_j_equipe_3 :
+				for joueur2 in equipe2 :
+					if j3 == joueur2 :
+						return True
+	#--------------------------------------
 									
 	return False
 
+def creation_liste_joueur_equipe_de_3(lst : List, lst_a_trie : List) -> List :
+
+	for equipe in lst_a_trie :
+		if len(equipe) == 3 :
+			lst.append(equipe[0])
+			lst.append(equipe[1])
+			lst.append(equipe[2])
+
+	return lst
+	
 def creation_liste_duel(equipe : List) :
 	joueur_adversaire = []
 	for i in range(0, len(equipe), 2) :
@@ -189,7 +215,7 @@ def creation_liste_joueur_adversaire(equipe : List) :
 			joueur_adversaire.append((equipe[0+i][1], (equipe[1+i][0], equipe[1+i][1])))
 			joueur_adversaire.append((equipe[1+i][0], (equipe[0+i][0], equipe[0+i][1])))
 			joueur_adversaire.append((equipe[1+i][1], (equipe[0+i][0], equipe[0+i][1])))
-
+	
 	return joueur_adversaire
 
 def affichage_duel(equipe : List) :
@@ -211,98 +237,77 @@ def affichage_duel(equipe : List) :
 
 		print(f"\n{160*'-'} \n")
 
+def verif_tt_comparaison(liste_equipe_prec : List, liste_equipe, liste_j_equipe_3, type_verif : str):
+	"""
+
+	"""
+	if  type_verif == "opti" :
+		for equipe_prec in liste_equipe_prec :
+			if comparaison_equipe_opti(liste_equipe, equipe_prec, liste_j_equipe_3) :
+				return True
+
+	elif type_verif == "degrade" :
+		for equipe_prec in liste_equipe_prec :
+			if comparaison_equipe_degrade(liste_equipe, equipe_prec, liste_j_equipe_3) :
+				return True
+				
+	return False
+	
+def creation_affichage_partie(tmp_debut : float, num_partie : int, nb_equipe : Tuple, liste_equipe_prec : List, liste_j_equipe_3 : List, n : int) :
+	"""
+
+	"""
+	type_verif = "opti"
+	liste_equipe = creation_equipe(nb_equipe[0], nb_equipe[1])
+	while perf_counter() - tmp_debut <= TEMPS_ENTRE_2_ALGO and verif_tt_comparaison(liste_equipe_prec, liste_equipe, liste_j_equipe_3, "opti"):
+		liste_equipe = creation_equipe(nb_equipe[0], nb_equipe[1])
+		n += 1
+
+	if perf_counter() - tmp_debut >= TEMPS_ENTRE_2_ALGO : # si le temps est écoulé
+		type_verif = "degrade"
+		liste_equipe = creation_equipe(nb_equipe[0], nb_equipe[1])
+		while verif_tt_comparaison(liste_equipe_prec, liste_equipe, liste_j_equipe_3,"degrade"):
+			liste_equipe = creation_equipe(nb_equipe[0], nb_equipe[1])
+			n += 1
+			
+	if num_partie == 1 :
+		apres_num_partie = "ère"
+	else :
+		apres_num_partie = "ème"
 		
+	print(f"\n{69* ' '}{13* '-'}\n{67* ' '} ! {num_partie}{apres_num_partie} PARTIE ! {type_verif}\n{69* ' '}{13* '-'}\n")
+	affichage_duel(liste_equipe)
+	winsound.Beep(frequency, duration)
+	
+	return n,liste_equipe
+
 if __name__ == "__main__":
 	import doctest
 	#doctest.testmod()
 	tuple_nb_equipe = nb_equipe(len(liste_participant)-1)
-
-	n=0#
+	liste_equipes_precedentes = []
+	nb_test = 0
+	num_partie = 0
+	liste_j_equipe_3 = []
 	
-	nb_parties = int(input("Combien de parties voulez vous (3 ou 4) ? "))
-	while nb_parties != 3 and nb_parties != 4 :
-		nb_parties = int(input("Combien de parties voulez vous (3 ou 4) ? "))
-
+	nb_parties = int(input("Combien de parties voulez vous ? "))
+	
 	temps_debut = perf_counter()
-	# 1ère partie
-	liste_equipe_t1 = creation_equipe(tuple_nb_equipe[0], tuple_nb_equipe[1])
-	liste_duel_t1 = creation_liste_duel(liste_equipe_t1)
-	liste_joueur_adversaire_t1 = creation_liste_joueur_adversaire(liste_equipe_t1)
-	print(liste_duel_t1)
-	
-	print(f"\n{69* ' '}{13* '-'}\n{67* ' '} ! 1ère PARTIE ! \n{69* ' '}{13* '-'}\n")
-	affichage_duel(liste_equipe_t1)
-	
-	# 2ème partie
-	liste_equipe_t2 = creation_equipe(tuple_nb_equipe[0], tuple_nb_equipe[1])
-	liste_duel_t2 = creation_liste_duel(liste_equipe_t2)
-	liste_joueur_adversaire_t2 = creation_liste_joueur_adversaire(liste_equipe_t2)
-	while (comparaison_equipe_opti(liste_duel_t1, liste_duel_t2)) and perf_counter() - temps_debut <= TEMPS_ENTRE_2_ALGO :
-		liste_equipe_t2 = creation_equipe(tuple_nb_equipe[0], tuple_nb_equipe[1])
-		liste_duel_t2 = creation_liste_duel(liste_equipe_t2)
-		n+=1#
 
-	if perf_counter() - temps_debut >= TEMPS_ENTRE_2_ALGO : # si le temps est écoulé
-		liste_joueur_adversaire_t2 = creation_liste_joueur_adversaire(liste_equipe_t2)
-		while comparaison_equipe_degrade(liste_equipe_t1, liste_equipe_t2, liste_joueur_adversaire_t1, liste_joueur_adversaire_t2) :
-			liste_equipe_t2 = creation_equipe(tuple_nb_equipe[0], tuple_nb_equipe[1])
-			liste_joueur_adversaire_t2 = creation_liste_joueur_adversaire(liste_equipe_t2)
-			n+=1#
-		
-	print(f"\n{69* ' '}{13* '-'}\n{67* ' '} ! 2ème PARTIE ! \n{69* ' '}{13* '-'}\n")
-	affichage_duel(liste_equipe_t2)
-	winsound.Beep(frequency, duration)
+
+	for i in range(nb_parties) :
+		num_partie += 1
+		n, liste_equipe = creation_affichage_partie(temps_debut , num_partie, tuple_nb_equipe, liste_equipes_precedentes, liste_j_equipe_3, nb_test)
+		liste_equipes_precedentes.append(liste_equipe)
+		liste_j_equipe_3 = creation_liste_joueur_equipe_de_3(liste_j_equipe_3, liste_equipe)
 	
-	# 3ème partie
-	liste_equipe_t3 = creation_equipe(tuple_nb_equipe[0], tuple_nb_equipe[1])
-	liste_duel_t3 = creation_liste_duel(liste_equipe_t3)
-	liste_joueur_adversaire_t3 = creation_liste_joueur_adversaire(liste_equipe_t3)
-	while (comparaison_equipe_opti(liste_duel_t1, liste_duel_t3) or comparaison_equipe_opti(liste_duel_t2, liste_duel_t3)) and perf_counter() - temps_debut <= TEMPS_ENTRE_2_ALGO :
-		liste_equipe_t3 = creation_equipe(tuple_nb_equipe[0], tuple_nb_equipe[1])
-		liste_duel_t3 = creation_liste_duel(liste_equipe_t3)
-		n+=1#
-		
-	if perf_counter() - temps_debut >= TEMPS_ENTRE_2_ALGO : # si le temps est écoulé
-		liste_joueur_adversaire_t3 = creation_liste_joueur_adversaire(liste_equipe_t3)
-		while comparaison_equipe_degrade(liste_equipe_t1, liste_equipe_t3, liste_joueur_adversaire_t1, liste_joueur_adversaire_t3) or comparaison_equipe_degrade(liste_equipe_t2, liste_equipe_t3, liste_joueur_adversaire_t2, liste_joueur_adversaire_t3) :
-			liste_equipe_t3 = creation_equipe(tuple_nb_equipe[0], tuple_nb_equipe[1])
-			liste_joueur_adversaire_t3 = creation_liste_joueur_adversaire(liste_equipe_t3)
-			n+=1#
-		
-		
-		
-	print(f"\n{69* ' '}{13* '-'}\n{67* ' '} ! 3ème PARTIE ! \n{69* ' '}{13* '-'}\n")
-	affichage_duel(liste_equipe_t3)
-	winsound.Beep(frequency, duration)
-	#
-	# 4ème partie
-	if nb_parties == 4 :
-		
-		liste_equipe_t4 = creation_equipe(tuple_nb_equipe[0], tuple_nb_equipe[1])
-		liste_duel_t4 = creation_liste_duel(liste_equipe_t4)
-		liste_joueur_adversaire_t4 = creation_liste_joueur_adversaire(liste_equipe_t4)
-		while (comparaison_equipe_opti(liste_duel_t1, liste_duel_t4) or comparaison_equipe_opti(liste_duel_t2, liste_duel_t4) or comparaison_equipe_opti(liste_duel_t3, liste_duel_t4)) and perf_counter() - temps_debut <= TEMPS_ENTRE_2_ALGO :
-			liste_equipe_t4 = creation_equipe(tuple_nb_equipe[0], tuple_nb_equipe[1])
-			liste_duel_t4 = creation_liste_duel(liste_equipe_t4)
-			n+=1#
-		r=0
-		if perf_counter() - temps_debut >= TEMPS_ENTRE_2_ALGO : # si le temps est écoulé
-			liste_joueur_adversaire_t4 = creation_liste_joueur_adversaire(liste_equipe_t4)
-			while comparaison_equipe_degrade(liste_equipe_t1, liste_equipe_t4, liste_joueur_adversaire_t1, liste_joueur_adversaire_t4) or comparaison_equipe_degrade(liste_equipe_t2, liste_equipe_t4, liste_joueur_adversaire_t2, liste_joueur_adversaire_t4) or comparaison_equipe_degrade(liste_equipe_t3, liste_equipe_t4, liste_joueur_adversaire_t3, liste_joueur_adversaire_t4) :
-				liste_equipe_t4 = creation_equipe(tuple_nb_equipe[0], tuple_nb_equipe[1])
-				liste_joueur_adversaire_t4 = creation_liste_joueur_adversaire(liste_equipe_t4)
-				n+=1#
-				r+=1
-				
-		print(f"\n{69* ' '}{13* '-'}\n{67* ' '} ! 4ème PARTIE ! \n{69* ' '}{13* '-'}\n")
-		affichage_duel(liste_equipe_t3)
-		winsound.Beep(frequency, duration)
-		
-	print(n)
-	if nb_parties == 4 :
-		print(r)
+	
+	print(nb_test)
 	print(perf_counter() - temps_debut)
-
+	for i in liste_equipes_precedentes:
+		print(i)
+	
+	
 # made by Youenn AIGNELOT
 
 
