@@ -1,14 +1,14 @@
 from csv import reader
 from random import randint
 from typing import Tuple, List
-from time import perf_counter
+from time import perf_counter 
 import winsound
 
 frequency = 800
 duration = 500
 
 liste_participant = []
-TEMPS_ENTRE_2_ALGO = 120
+TEMPS_ENTRE_2_ALGO = 60
 
 # ouverture du fichier des participants et stockage dans une liste
 with open("participant_petanque.csv", "r") as csv_file : 
@@ -85,13 +85,6 @@ def comparaison_equipe_opti(partie_1 : List, partie_2 : List, liste_j_equipe_3) 
 				for joueur1 in equipe1 :
 					if j3 == joueur1 :
 						return True
-						
-	for equipe2 in partie_2 :					
-		if len(equipe2) == 3 :
-			for j3 in liste_j_equipe_3 :
-				for joueur2 in equipe2 :
-					if j3 == joueur2 :
-						return True
 	#--------------------------------------
 			
 	# vérifie pas dans le même duel
@@ -157,14 +150,48 @@ def comparaison_equipe_degrade(partie_1 : List, partie_2 : List, liste_j_equipe_
 				for joueur1 in equipe1 :
 					if j3 == joueur1 :
 						return True
-						
-	for equipe2 in partie_2 :					
-		if len(equipe2) == 3 :
-			for j3 in liste_j_equipe_3 :
-				for joueur2 in equipe2 :
-					if j3 == joueur2 :
-						return True
 	#--------------------------------------
+									
+	return False
+
+def comparaison_equipe_degrade_plus(partie_1 : List, partie_2 : List, liste_j_equipe_3 : List) :
+	""".
+	compare 2 listes et regarde si elles ont des tuples en commun
+	>>> comparaison_equipe([(2,7)],[(7,2)])
+	True
+	>>> comparaison_equipe([(1,2,7)],[(2,7)])
+	True
+	>>> comparaison_equipe([(1,2,7)],[(2,9,7)])
+	True
+	>>> comparaison_equipe([(1,2,7)],[(2,9)])
+	False
+	"""
+	# vérifie pas 2 fois dans la même équipe
+	for equipe1 in partie_1 :
+		for equipe2 in partie_2 :
+			if equipe1 == equipe2 or equipe1[::-1] == equipe2:
+				return True
+			elif len(equipe1) > 2 or len(equipe2) > 2 :
+				cmt = 0
+				for joueur1 in equipe1 :
+					for joueur2 in equipe2 :
+						if joueur1 == joueur2 :
+							cmt += 1
+							if cmt == 2 :
+								return True
+	#-----------------------------------
+
+	# vérifie pas 2 fois contre le même adversaire
+	lst_joueur_adversaire1 = creation_liste_joueur_adversaire(partie_1)
+	lst_joueur_adversaire2 = creation_liste_joueur_adversaire(partie_2)
+	for j_a1 in lst_joueur_adversaire1 :
+		for j_a2 in lst_joueur_adversaire2 :
+			if j_a1[0] == j_a2[0] :
+				for adversaire1 in j_a1[1] :
+					for adversaire2 in j_a2[1] :
+						if adversaire1 == adversaire2 :
+							return True
+	# --------------------------------------------
 									
 	return False
 
@@ -246,9 +273,14 @@ def verif_tt_comparaison(liste_equipe_prec : List, liste_equipe, liste_j_equipe_
 			if comparaison_equipe_opti(liste_equipe, equipe_prec, liste_j_equipe_3) :
 				return True
 
-	elif type_verif == "degrade" :
+	elif type_verif == "dégradé" :
 		for equipe_prec in liste_equipe_prec :
 			if comparaison_equipe_degrade(liste_equipe, equipe_prec, liste_j_equipe_3) :
+				return True
+
+	elif type_verif == "dégradé +" :
+		for equipe_prec in liste_equipe_prec :
+			if comparaison_equipe_degrade_plus(liste_equipe, equipe_prec, liste_j_equipe_3) :
 				return True
 				
 	return False
@@ -257,16 +289,24 @@ def creation_affichage_partie(tmp_debut : float, num_partie : int, nb_equipe : T
 	"""
 
 	"""
-	type_verif = "opti"
-	liste_equipe = creation_equipe(nb_equipe[0], nb_equipe[1])
-	while perf_counter() - tmp_debut <= TEMPS_ENTRE_2_ALGO and verif_tt_comparaison(liste_equipe_prec, liste_equipe, liste_j_equipe_3, "opti"):
+	if TEMPS_ENTRE_2_ALGO > perf_counter() - tmp_debut :
+		type_verif = "opti"
 		liste_equipe = creation_equipe(nb_equipe[0], nb_equipe[1])
-		n += 1
+		while perf_counter() - tmp_debut <= TEMPS_ENTRE_2_ALGO and verif_tt_comparaison(liste_equipe_prec, liste_equipe, liste_j_equipe_3, type_verif):
+			liste_equipe = creation_equipe(nb_equipe[0], nb_equipe[1])
+			n += 1
 
-	if perf_counter() - tmp_debut >= TEMPS_ENTRE_2_ALGO : # si le temps est écoulé
-		type_verif = "degrade"
+	if 2*TEMPS_ENTRE_2_ALGO > perf_counter() - tmp_debut >= TEMPS_ENTRE_2_ALGO  : # si le 1er temps est écoulé
+		type_verif = "dégradé"
 		liste_equipe = creation_equipe(nb_equipe[0], nb_equipe[1])
-		while verif_tt_comparaison(liste_equipe_prec, liste_equipe, liste_j_equipe_3,"degrade"):
+		while 2*TEMPS_ENTRE_2_ALGO > perf_counter() - tmp_debut >= TEMPS_ENTRE_2_ALGO and verif_tt_comparaison(liste_equipe_prec, liste_equipe, liste_j_equipe_3, type_verif):
+			liste_equipe = creation_equipe(nb_equipe[0], nb_equipe[1])
+			n += 1
+
+	if perf_counter() - tmp_debut >= 2*TEMPS_ENTRE_2_ALGO  : # si le 2eme temps est écoulé
+		type_verif = "dégradé +"
+		liste_equipe = creation_equipe(nb_equipe[0], nb_equipe[1])
+		while perf_counter() - tmp_debut >= 2*TEMPS_ENTRE_2_ALGO and verif_tt_comparaison(liste_equipe_prec, liste_equipe, liste_j_equipe_3, type_verif):
 			liste_equipe = creation_equipe(nb_equipe[0], nb_equipe[1])
 			n += 1
 			
@@ -282,7 +322,7 @@ def creation_affichage_partie(tmp_debut : float, num_partie : int, nb_equipe : T
 	return n,liste_equipe
 
 if __name__ == "__main__":
-	import doctest
+	#import doctest
 	#doctest.testmod()
 	tuple_nb_equipe = nb_equipe(len(liste_participant)-1)
 	liste_equipes_precedentes = []
@@ -290,20 +330,21 @@ if __name__ == "__main__":
 	num_partie = 0
 	liste_j_equipe_3 = []
 	
+	print(f"Nombre de participant : {len(liste_participant)-1}\n")
+	
 	nb_parties = int(input("Combien de parties voulez vous ? "))
 	
 	temps_debut = perf_counter()
-
-
+	
 	for i in range(nb_parties) :
 		num_partie += 1
-		n, liste_equipe = creation_affichage_partie(temps_debut , num_partie, tuple_nb_equipe, liste_equipes_precedentes, liste_j_equipe_3, nb_test)
+		nb_test, liste_equipe = creation_affichage_partie(temps_debut , num_partie, tuple_nb_equipe, liste_equipes_precedentes, liste_j_equipe_3, nb_test)
 		liste_equipes_precedentes.append(liste_equipe)
 		liste_j_equipe_3 = creation_liste_joueur_equipe_de_3(liste_j_equipe_3, liste_equipe)
 	
 	
-	print(nb_test)
-	print(perf_counter() - temps_debut)
+	print(f"nombre de tentatives : {nb_test}")
+	print(f"temps d'éxecution : {int(perf_counter() - temps_debut)}s\n")
 	for i in liste_equipes_precedentes:
 		print(i)
 	
